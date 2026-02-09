@@ -1,9 +1,48 @@
-
 import React from 'react';
 import { Edit3 } from 'lucide-react';
+import DatePicker, { registerLocale } from 'react-datepicker';
+import { th } from 'date-fns/locale/th';
+import "react-datepicker/dist/react-datepicker.css";
 import TagsInput from './TagsInput';
 import GalleryInput from './GalleryInput';
 import { CATEGORIES, COVER_IMAGE_OPTIONS } from '../config';
+
+// Register Thai locale
+registerLocale('th', th);
+
+const months = [
+    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+];
+
+// Helper to format Date to "d MMMM yyyy" (BE)
+const formatThaiDate = (date) => {
+    if (!date) return '';
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear() + 543;
+    return `${day} ${month} ${year}`;
+};
+
+// Helper to parse "d MMMM yyyy" (BE) back to Date
+const parseThaiDate = (dateString) => {
+    if (!dateString) return null;
+    try {
+        const parts = dateString.split(' ');
+        if (parts.length !== 3) return null;
+
+        const day = parseInt(parts[0]);
+        const monthIndex = months.indexOf(parts[1]);
+        const yearBE = parseInt(parts[2]);
+        const yearCE = yearBE - 543;
+
+        if (monthIndex === -1) return null;
+
+        return new Date(yearCE, monthIndex, day);
+    } catch (e) {
+        return null;
+    }
+};
 
 export default function ActivityForm({
     formData,
@@ -57,15 +96,79 @@ export default function ActivityForm({
 
                     {/* Date */}
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">วันที่ (ข้อความ)</label>
-                        <input
-                            type="text"
-                            name="date"
-                            value={formData.date}
-                            onChange={onChange}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                            placeholder="วัน เดือน ปี"
-                        />
+                        <label className="block text-sm font-medium text-slate-700 mb-1">วันที่ (Date)</label>
+                        <div className="relative">
+                            <DatePicker
+                                selected={formData.date ? parseThaiDate(formData.date) : null}
+                                onChange={(date) => {
+                                    if (date) {
+                                        // Update formData with the formatted Thai date string
+                                        onChange({
+                                            target: {
+                                                name: 'date',
+                                                value: formatThaiDate(date)
+                                            }
+                                        });
+                                    } else {
+                                        onChange({
+                                            target: {
+                                                name: 'date',
+                                                value: ''
+                                            }
+                                        });
+                                    }
+                                }}
+                                locale="th"
+                                dateFormat="d MMMM yyyy"
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none w-full"
+                                placeholderText="เลือกวันที่"
+                                renderCustomHeader={({
+                                    date,
+                                    changeYear,
+                                    changeMonth,
+                                    decreaseMonth,
+                                    increaseMonth,
+                                    prevMonthButtonDisabled,
+                                    nextMonthButtonDisabled,
+                                }) => (
+                                    <div className="flex items-center justify-between px-2 py-2">
+                                        <button onClick={decreaseMonth} disabled={prevMonthButtonDisabled} type="button" className="p-1 hover:bg-slate-100 rounded">
+                                            {'<'}
+                                        </button>
+                                        <div className="flex gap-2">
+                                            <select
+                                                value={date.getFullYear()}
+                                                onChange={({ target: { value } }) => changeYear(parseInt(value))}
+                                                className="p-1 border rounded"
+                                            >
+                                                {Array.from({ length: 20 }, (_, i) => new Date().getFullYear() - 10 + i).map((y) => (
+                                                    <option key={y} value={y}>
+                                                        {y + 543}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <select
+                                                value={months[date.getMonth()]}
+                                                onChange={({ target: { value } }) =>
+                                                    changeMonth(months.indexOf(value))
+                                                }
+                                                className="p-1 border rounded"
+                                            >
+                                                {months.map((option) => (
+                                                    <option key={option} value={option}>
+                                                        {option}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <button onClick={increaseMonth} disabled={nextMonthButtonDisabled} type="button" className="p-1 hover:bg-slate-100 rounded">
+                                            {'>'}
+                                        </button>
+                                    </div>
+                                )}
+                            />
+                        </div>
+                        
                     </div>
 
                     {/* Title */}

@@ -100,8 +100,29 @@ export default function App() {
   };
 
   // Auto-fill Logic
+  // Auto-fill Logic
   const getAutoPath = (type) => {
-    const date = new Date();
+    let date = new Date(); // Default to today
+
+    if (formData.date) {
+      // Parse date from "29 มกราคม 2569"
+      const parts = formData.date.split(' ');
+      if (parts.length === 3) {
+        const months = [
+          'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+          'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+        ];
+        const day = parseInt(parts[0]);
+        const monthIndex = months.indexOf(parts[1]);
+        const yearBE = parseInt(parts[2]);
+        const yearCE = yearBE - 543;
+
+        if (monthIndex !== -1) {
+          date = new Date(yearCE, monthIndex, day);
+        }
+      }
+    }
+
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = (date.getFullYear() + 543).toString().slice(-2); // BE Short Year
